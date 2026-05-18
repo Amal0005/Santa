@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../utils/api';
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { Send, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,7 +17,7 @@ const PostOffice = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (user.coins < 50) {
+        if ((user.coins || 0) < 50) {
             setError("Not enough coins! You need 50 coins to send a letter.");
             return;
         }
@@ -28,18 +29,40 @@ const PostOffice = () => {
             // Fake delay for "sending" animation
             await new Promise(resolve => setTimeout(resolve, 2000));
 
-            const res = await api.post('/letters', { content });
+            // Generate Response
+            const responses = [
+                "Ho Ho Ho! What a wonderful letter! I'll do my best!",
+                "Mrs. Claus and I loved reading this. Be good!",
+                "My elves are working hard on your wish!",
+                "Keep up the kindness, and magic will happen!"
+            ];
+            const santaResponse = responses[Math.floor(Math.random() * responses.length)];
 
-            updateUser({
-                coins: res.data.coins,
-                stickersUnlocked: res.data.stickersUnlocked
+            // Save to Firestore subcollection
+            await addDoc(collection(db, 'users', user.uid, 'letters'), {
+                content,
+                createdAt: serverTimestamp(),
+                reply: santaResponse
             });
 
-            setResponse(res.data.santaResponse);
+            // Update stats
+            const newCoins = (user.coins || 0) - 50;
+            const newStickers = [...(user.stickersUnlocked || [])];
+            if (!newStickers.includes('letter-badge')) {
+                newStickers.push('letter-badge');
+            }
+
+            await updateUser({
+                coins: newCoins,
+                stickersUnlocked: newStickers
+            });
+
+            setResponse(santaResponse);
             setShowConfetti(true);
             setContent('');
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to send letter.");
+            console.error(err);
+            setError("Failed to send letter. Please try again.");
         } finally {
             setLoading(false);
         }

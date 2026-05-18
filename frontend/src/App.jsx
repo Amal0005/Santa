@@ -14,9 +14,12 @@ import TreePage from './pages/TreePage';
 import Community from './pages/Community';
 import Leaderboard from './pages/Leaderboard';
 
+import { Toaster } from 'react-hot-toast';
+
 function App() {
     return (
         <AuthProvider>
+            <Toaster position="top-center" reverseOrder={false} />
             <Layout>
                 <Routes>
                     <Route path="/" element={<Home />} />

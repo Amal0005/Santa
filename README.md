@@ -1,6 +1,6 @@
 # 🎅 ElfVault
 
-Welcome to **ElfVault**, a magical digital platform designed to encourage, track, and reward acts of kindness. Built with the **MERN Stack** (MongoDB, Express, React, Node.js), this application transforms good deeds into "Spirit Coins" and holiday cheer!
+Welcome to **ElfVault**, a magical digital platform designed to encourage, track, and reward acts of kindness. Built with **React and Firebase**, this application transforms good deeds into "Spirit Coins" and holiday cheer!
 
 ## 🌟 How It Works
 
@@ -36,7 +36,7 @@ The Santa Kindness Wallet gamifies the concept of being "nice" during the holida
 
 ### 📨 Santa's Post Office
 *   **Write to Santa**: Users can spend coins to send personalized letters to Santa.
-*   **Santa's Reply**: Receive instant, whimsical responses from the North Pole (powered by the backend).
+*   **Santa's Reply**: Receive instant, whimsical responses from the North Pole (powered by local magic and stored in the cloud).
 
 ### 🏆 Leaderboard
 *   **Top Elves**: See who is leading the charge in spreading kindness.
@@ -45,9 +45,7 @@ The Santa Kindness Wallet gamifies the concept of being "nice" during the holida
 ## 🛠 Tech Stack
 
 *   **Frontend**: React (Vite), TailwindCSS, Framer Motion (for animations), Lucide React (icons).
-*   **Backend**: Node.js, Express.js.
-*   **Database**: MongoDB (Mongoose) for storing users, deeds, and tree states.
-*   **Authentication**: JWT (JSON Web Tokens) for secure access.
+*   **Backend / Database**: Firebase (Authentication, Firestore).
 
 ---
 *Spread joy, one coin at a time!* 🎄

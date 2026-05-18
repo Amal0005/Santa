@@ -2,30 +2,43 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import NiceMeter from '../components/NiceMeter';
-import api from '../utils/api';
+import { db } from '../firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { Clock, Gift } from 'lucide-react';
 import Confetti from 'react-confetti';
 
 const Dashboard = () => {
-    const { user, updateUser } = useAuth();
+    const { user } = useAuth();
     const [deeds, setDeeds] = useState([]);
     const [showConfetti, setShowConfetti] = useState(false);
 
     useEffect(() => {
-        fetchData();
-    }, []);
+        if (user?.uid) {
+            fetchData();
+        }
+    }, [user?.uid]);
 
     const fetchData = async () => {
         try {
-            const res = await api.get('/user/dashboard');
-            setDeeds(res.data.deeds);
-            // Sync user data if changed significantly or just update to be safe
-            if (res.data.user.coins !== user.coins) {
-                if (res.data.user.coins > user.coins) setShowConfetti(true);
-                updateUser(res.data.user);
-            }
+            // Firestore query for deeds
+            const deedsRef = collection(db, 'deeds');
+            // Note: Composite index may be required for userId + date sort
+            const q = query(
+                deedsRef,
+                where('userId', '==', user.uid),
+                orderBy('date', 'desc'),
+                limit(5)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const deedsData = querySnapshot.docs.map(doc => ({
+                _id: doc.id,
+                ...doc.data()
+            }));
+
+            setDeeds(deedsData);
         } catch (err) {
-            console.error(err);
+            console.error("Error fetching deeds:", err);
         }
     };
 
@@ -34,7 +47,7 @@ const Dashboard = () => {
             {showConfetti && <Confetti recycle={false} numberOfPieces={200} onConfettiComplete={() => setShowConfetti(false)} />}
 
             <div className="text-center space-y-2">
-                <h2 className="text-3xl font-bold drop-shadow-md">Ho Ho Ho, {user.name}! 🎅❤️</h2>
+                <h2 className="text-3xl font-bold drop-shadow-md">Ho Ho Ho, {user?.name || 'Elf'}! 🎅❤️</h2>
                 <p className="text-white/80 font-medium">Santa is proud of you!</p>
                 <Link to="/missions" className="inline-block mt-4 bg-white/20 hover:bg-white/30 px-6 py-2 rounded-full text-sm font-bold transition border border-white/20">
                     📜 Santa’s Missions
@@ -42,7 +55,7 @@ const Dashboard = () => {
             </div>
 
             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-8 shadow-2xl border border-white/20 transform hover:scale-[1.02] transition duration-500">
-                <NiceMeter percentage={user.niceMeter} />
+                <NiceMeter percentage={user?.niceMeter || 0} />
             </div>
 
             <div className="bg-black/20 rounded-2xl p-6 backdrop-blur-sm border border-white/5">

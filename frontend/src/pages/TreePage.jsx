@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import api from '../utils/api';
+
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
 import Confetti from 'react-confetti';
@@ -24,21 +24,14 @@ const TreePage = () => {
     const [showConfetti, setShowConfetti] = useState(false);
 
     useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            const res = await api.get('/tree');
-            setDecorations(res.data.decorations);
-        } catch (err) {
-            console.error(err);
+        if (user && user.decorations) {
+            setDecorations(user.decorations);
         }
-    };
+    }, [user]);
 
     const buyItem = async (item) => {
         if (decorations.includes(item.id)) return;
-        if (user.coins < item.price) {
+        if ((user.coins || 0) < item.price) {
             setMsg(`Not enough coins for ${item.name}!`);
             setTimeout(() => setMsg(''), 3000);
             return;
@@ -46,18 +39,23 @@ const TreePage = () => {
 
         setLoading(true);
         try {
-            const res = await api.post('/tree/buy', { itemId: item.id });
-            setDecorations(res.data.decorations);
-            updateUser({ coins: res.data.coins }); // Sync global coins
+            const newDecorations = [...decorations, item.id];
+            const newCoins = (user.coins || 0) - item.price;
 
-            setMsg(res.data.message);
+            await updateUser({
+                coins: newCoins,
+                decorations: newDecorations
+            });
+
+            setMsg(`You bought ${item.name}!`);
             setShowConfetti(true);
             setTimeout(() => {
                 setMsg('');
                 setShowConfetti(false);
             }, 3000);
         } catch (err) {
-            setMsg(err.response?.data?.message || 'Error buying item');
+            console.error(err);
+            setMsg('Error buying item');
         } finally {
             setLoading(false);
         }
@@ -71,7 +69,7 @@ const TreePage = () => {
                 <h2 className="text-3xl font-bold mb-2 text-yellow-300 drop-shadow-md">My Kindness Tree 🎄</h2>
                 <p className="text-white/80">Use your coins to decorate your tree!</p>
                 <div className="mt-4 bg-black/30 inline-block px-4 py-2 rounded-full border border-yellow-500/50 text-yellow-400 font-bold text-xl">
-                    You have: {user.coins} 🪙
+                    You have: {user?.coins || 0} 🪙
                 </div>
             </div>
 
@@ -136,10 +134,10 @@ const TreePage = () => {
                                     onClick={() => buyItem(item)}
                                     disabled={owned || loading}
                                     className={`p-3 rounded-xl flex flex-col items-center justify-center border-2 transition relative ${owned
-                                            ? 'bg-green-500/20 border-green-500 opacity-60'
-                                            : canAfford
-                                                ? 'bg-white/10 border-white/10 hover:bg-white/20 hover:border-yellow-400 hover:scale-105'
-                                                : 'bg-black/20 border-red-900/30 opacity-50 cursor-not-allowed'
+                                        ? 'bg-green-500/20 border-green-500 opacity-60'
+                                        : canAfford
+                                            ? 'bg-white/10 border-white/10 hover:bg-white/20 hover:border-yellow-400 hover:scale-105'
+                                            : 'bg-black/20 border-red-900/30 opacity-50 cursor-not-allowed'
                                         }`}
                                 >
                                     <div className="text-3xl mb-1">{item.icon}</div>

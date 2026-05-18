@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import api from '../utils/api';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 import { Sparkles, Heart, Zap, Gift, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -10,15 +11,24 @@ const Community = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await api.get('/deed/stats');
-                setStats(res.data);
+                const deedsRef = collection(db, 'deeds');
+                const snapshot = await getDocs(deedsRef);
+
+                let totalDeeds = snapshot.size;
+                let totalCoins = 0;
+
+                snapshot.forEach(doc => {
+                    totalCoins += (doc.data().coinValue || 0);
+                });
+
+                setStats({ totalDeeds, totalCoins, goal: 10000 });
             } catch (err) {
-                console.error(err);
+                console.error("Error fetching community stats:", err);
             }
         };
         fetchStats();
-        // Poll every 10 seconds
-        const interval = setInterval(fetchStats, 10000);
+        // Poll every 30 seconds
+        const interval = setInterval(fetchStats, 30000);
         return () => clearInterval(interval);
     }, []);
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import api from '../utils/api';
+import { db } from '../firebase';
+import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { useAuth } from '../context/AuthContext';
 import { Trophy, Crown, Star, Medal } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -11,10 +12,19 @@ const Leaderboard = () => {
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const res = await api.get('/user/leaderboard');
-                setUsers(res.data);
+                const q = query(
+                    collection(db, 'users'),
+                    orderBy('coins', 'desc'),
+                    limit(20)
+                );
+                const snapshot = await getDocs(q);
+                const fetchedUsers = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                setUsers(fetchedUsers);
             } catch (err) {
-                console.error(err);
+                console.error("Error fetching leaderboard:", err);
             }
         };
         fetchLeaderboard();
@@ -34,7 +44,7 @@ const Leaderboard = () => {
                     <div className="text-center p-8 opacity-70">Loading the list...</div>
                 ) : (
                     users.map((u, index) => {
-                        const isCurrent = currentUser && currentUser._id === u._id;
+                        const isCurrent = currentUser && currentUser.uid === u.id;
                         let rankIcon = <span className="text-xl font-bold text-white/60">#{index + 1}</span>;
                         let rowClass = "bg-white/5";
 
@@ -55,7 +65,7 @@ const Leaderboard = () => {
 
                         return (
                             <motion.div
-                                key={u._id}
+                                key={u.id}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
